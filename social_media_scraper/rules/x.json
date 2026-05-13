@@ -1,0 +1,37 @@
+{
+  "platform": "x",
+  "base_url": "https://x.com",
+  "selectors": {
+    "tweet": "article[data-testid=\"tweet\"]",
+    "tweet_text": "[data-testid=\"tweetText\"]",
+    "user_name": "[data-testid=\"User-Name\"]",
+    "avatar": "[data-testid=\"Tweet-User-Avatar\"] img",
+    "photo": "[data-testid=\"tweetPhoto\"] img",
+    "video": "[data-testid=\"videoPlayer\"]",
+    "tweet_link": "a[href*=\"/status/\"]",
+    "login_button": "[data-testid=\"loginButton\"]"
+  },
+  "api_patterns": {
+    "tweet_detail": ["TweetResultByRestId", "TweetDetail", "graphql"],
+    "feed": ["HomeTimeline", "HomeLatestTimeline"],
+    "bookmarks": ["Bookmarks"]
+  },
+  "data_schema": {
+    "tweet_id": "rest_id",
+    "full_text": "legacy.full_text",
+    "created_at": "legacy.created_at",
+    "favorite_count": "legacy.favorite_count",
+    "reply_count": "legacy.reply_count",
+    "retweet_count": "legacy.retweet_count",
+    "bookmark_count": "legacy.bookmark_count",
+    "views": "views.count",
+    "user_id": "core.user_results.result.rest_id",
+    "user_name": "core.user_results.result.legacy.name",
+    "user_avatar": "core.user_results.result.legacy.profile_image_url_https",
+    "media": "legacy.extended_entities.media",
+    "hashtags": "legacy.entities.hashtags"
+  },
+  "graphql_data_path": "data.tweetResult.result",
+  "timeline_keys": ["bookmark_timeline_v2", "home.home_timeline_urt"],
+  "entry_types": ["TimelineTweet", "TimelineTimelineModule"]
+}

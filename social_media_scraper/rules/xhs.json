@@ -1,0 +1,38 @@
+{
+  "platform": "xhs",
+  "base_url": "https://www.xiaohongshu.com",
+  "selectors": {
+    "post_title": "#detail-title, .title, [class*=\"note-content\"] .title",
+    "post_desc": "#detail-desc, .desc, [class*=\"note-content\"] .desc",
+    "post_images": "[class*=\"carousel\"] img, [class*=\"slide-item\"] img",
+    "post_container": "section.note-item",
+    "post_link": "a[href*=\"/explore/\"], a[href*=\"/discovery/\"]",
+    "user_name": ".user-name, [class*=\"user-name\"]",
+    "user_avatar": ".user-avatar img, [class*=\"avatar\"] img"
+  },
+  "post_link_regex": "/(?:explore|discovery|profile\\/[a-f0-9]+)\\/([a-f0-9]{20,})",
+  "api_patterns": {
+    "post_detail": ["note_info", "note_detail"],
+    "feed": ["homefeed", "note/feed"],
+    "profile": ["user_posted", "user_post"]
+  },
+  "ssr_state_path": "window.__INITIAL_STATE__",
+  "data_schema": {
+    "note_id": "noteId",
+    "title": "title",
+    "desc": "desc",
+    "type": "type",
+    "user_id": "user.userId",
+    "nickname": "user.nickname",
+    "avatar": "user.avatar",
+    "likes": "interactInfo.likedCount",
+    "comments": "interactInfo.commentCount",
+    "collects": "interactInfo.collectedCount",
+    "shares": "interactInfo.shareCount",
+    "images": "imageList",
+    "image_url": "urlDefault",
+    "tags": "tagList",
+    "tag_name": "name",
+    "video_key": "video.consumer.originVideoKey"
+  }
+}

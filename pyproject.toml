@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "social-media-scraper"
+version = "0.1.0"
+description = "Playwright-based social media scraping engine with DB-stored rules"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "playwright>=1.40",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
+
+[tool.setuptools.packages.find]
+include = ["social_media_scraper*"]
+
+[tool.setuptools.package-data]
+social_media_scraper = ["stealth.min.js"]

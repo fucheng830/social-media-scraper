@@ -1,0 +1,29 @@
+{
+  "platform": "douyin",
+  "base_url": "https://www.douyin.com",
+  "selectors": {
+    "user_name": "[data-e2e=\"user-info\"] .title, .user-info .nickname, h1",
+    "post_title": ".video-title, h1, .title"
+  },
+  "api_patterns": {
+    "post_detail": ["aweme/detail"],
+    "profile": ["aweme/post", "aweme/aweme", "user/post"]
+  },
+  "data_schema": {
+    "aweme_id": "aweme_id",
+    "desc": "desc",
+    "create_time": "create_time",
+    "author_uid": "author.uid",
+    "author_nickname": "author.nickname",
+    "avatar_thumb": "author.avatar_thumb.url_list",
+    "avatar_medium": "author.avatar_medium.url_list",
+    "digg_count": "statistics.digg_count",
+    "comment_count": "statistics.comment_count",
+    "share_count": "statistics.share_count",
+    "collect_count": "statistics.collect_count",
+    "video_play_addr": "video.play_addr.url_list",
+    "cover_url": "video.cover.url_list",
+    "images": "images",
+    "duration": "video.duration"
+  }
+}
