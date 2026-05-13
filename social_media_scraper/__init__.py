@@ -32,7 +32,7 @@ from .scroll import scroll_to_load, scroll_to_load_sync
 from .response import ResponseInterceptor
 
 # Parsers
-from .parsers import parse_tweet, parse_post
+from .parsers import parse_tweet, parse_post, parse_video
 
 __version__ = "0.1.0"
 
@@ -65,6 +65,7 @@ __all__ = [
     # Parsers
     "parse_tweet",
     "parse_post",
+    "parse_video",
     # Version
     "__version__",
 ]
