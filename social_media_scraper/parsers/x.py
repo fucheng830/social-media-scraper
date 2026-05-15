@@ -78,6 +78,18 @@ def parse_tweet(raw: dict) -> PlatformPost:
     hashtags = [h.get("text", "") for h in legacy.get("entities", {}).get("hashtags", [])]
     views = raw.get("views", {}).get("count", "0")
 
+    # Extract card (link preview) images — X stores these in card.binding_values
+    card = raw.get("card", {})
+    if card:
+        binding_values = card.get("legacy", {}).get("binding_values", [])
+        for bv in binding_values:
+            key = bv.get("key", "")
+            if key in ("thumbnail_image_original", "player_image_original", "photo_image_full_size_original"):
+                img_val = bv.get("value", {}).get("image_value", {})
+                card_url = img_val.get("url", "")
+                if card_url:
+                    media_items.append(MediaItem(url=card_url, media_type="image"))
+
     return PlatformPost(
         platform="x",
         post_id=str(tweet_id),
