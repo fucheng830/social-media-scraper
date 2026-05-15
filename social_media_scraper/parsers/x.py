@@ -90,6 +90,15 @@ def parse_tweet(raw: dict) -> PlatformPost:
                 if card_url:
                     media_items.append(MediaItem(url=card_url, media_type="image"))
 
+    # Extract network-captured media URLs (from page request tracking)
+    network_urls = raw.get("_network_media_urls", [])
+    if network_urls:
+        # Upgrade thumbnail URLs to full-size
+        for url in network_urls:
+            full_url = url.replace("&name=small", "&name=large").replace("?format=jpg&name=small", "?format=jpg&name=large")
+            if full_url not in [m.url for m in media_items]:
+                media_items.append(MediaItem(url=full_url, media_type="image"))
+
     return PlatformPost(
         platform="x",
         post_id=str(tweet_id),
