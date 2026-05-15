@@ -206,18 +206,22 @@ class BaseScraper(ABC):
         if self._browser is None:
             await self._ensure_browser()
 
-        # If using CDP, reuse the remote browser's existing context
-        # but inject cookies from DB into it
+        # If using CDP, create a new context with cookie storage_state
+        # (add_cookies silently fails on CDP — must use new_context with storage_state)
+        state = cookie_data or self._cookie_state
+        if self.cdp_url and self._browser and state and state.get("cookies"):
+            self._context = await self._browser.new_context(storage_state=state)
+            await inject_stealth(self._context)
+            logger.debug(f"CDP: new context created with {len(state['cookies'])} cookies")
+            return self._context
+
+        # CDP without cookies: reuse existing context
         if self.cdp_url and self._browser:
             contexts = self._browser.contexts
             if contexts:
                 self._context = contexts[0]
-                state = cookie_data or self._cookie_state
-                if state and state.get("cookies"):
-                    await self._context.add_cookies(state["cookies"])
-                    logger.debug(f"CDP: injected {len(state['cookies'])} cookies")
                 await inject_stealth(self._context)
-                logger.debug("Reusing CDP browser context")
+                logger.debug("Reusing CDP browser context (no cookies)")
                 return self._context
 
         state = cookie_data or self._cookie_state
