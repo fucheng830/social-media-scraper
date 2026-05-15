@@ -8,6 +8,7 @@ interception for free.
 from __future__ import annotations
 
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -80,6 +81,7 @@ class BaseScraper(ABC):
             "browser_args", list(DEFAULT_BROWSER_ARGS)
         )
         self.rules: dict[str, Any] = cfg.get("rules", {})
+        self.cdp_url: str = cfg.get("cdp_url", os.environ.get("CHROME_CDP_URL", ""))
 
         # --- internal state ---
         self._playwright: Any = None
@@ -94,11 +96,28 @@ class BaseScraper(ABC):
     async def _ensure_browser(self) -> None:
         """Ensure a Playwright browser instance is running.
 
-        Lazily calls :meth:`_launch_browser` if the browser has not been
-        started yet.  Idempotent — safe to call before every scrape.
+        Tries CDP remote connection first (when ``cdp_url`` is
+        configured), then falls back to launching a local browser.
+        Idempotent — safe to call before every scrape.
         """
-        if self._browser is None:
-            await self._launch_browser()
+        if self._browser is not None:
+            # Verify the existing browser is still usable
+            try:
+                page = await self._browser.new_page()
+                await page.close()
+                return
+            except Exception:
+                logger.debug("Existing browser connection stale, reconnecting")
+                self._browser = None
+                self._context = None
+                self._playwright = None
+
+        # Try CDP first
+        if self.cdp_url and await self._connect_cdp():
+            return
+
+        # Fallback: launch local browser
+        await self._launch_browser()
 
     async def _launch_browser(self, headless: bool | None = None) -> None:
         """Start Playwright and launch a Chromium browser.
@@ -124,6 +143,33 @@ class BaseScraper(ABC):
         )
         logger.info("Browser launched (headless=%s)", headless)
 
+    async def _connect_cdp(self) -> bool:
+        """Connect to remote Chrome via CDP instead of launching locally.
+
+        Returns ``True`` if the CDP connection succeeded, ``False`` otherwise.
+        When this method returns ``True``, ``self._browser`` and
+        ``self._context`` are populated from the remote browser.
+
+        .. versionadded:: 1.1.0
+        """
+        if not self.cdp_url:
+            return False
+        self._playwright = await async_playwright().start()
+        try:
+            self._browser = await self._playwright.chromium.connect_over_cdp(
+                self.cdp_url
+            )
+            contexts = self._browser.contexts
+            if contexts:
+                self._context = contexts[0]  # reuse existing browser context
+            logger.info("Connected to remote Chrome via CDP: %s", self.cdp_url)
+            return True
+        except Exception as e:
+            logger.warning(
+                "CDP connection failed: %s, falling back to local browser", e
+            )
+            return False
+
     async def _load_state(
         self, cookie_data: dict | None = None
     ) -> BrowserContext:
@@ -148,10 +194,31 @@ class BaseScraper(ABC):
             The (cached or newly created) browser context.
         """
         if self._context is not None:
-            return self._context
+            # Verify the cached context is still usable
+            try:
+                page = await self._context.new_page()
+                await page.close()
+                return self._context
+            except Exception:
+                logger.debug("Cached browser context stale, recreating")
+                self._context = None
 
         if self._browser is None:
             await self._ensure_browser()
+
+        # If using CDP, reuse the remote browser's existing context
+        # but inject cookies from DB into it
+        if self.cdp_url and self._browser:
+            contexts = self._browser.contexts
+            if contexts:
+                self._context = contexts[0]
+                state = cookie_data or self._cookie_state
+                if state and state.get("cookies"):
+                    await self._context.add_cookies(state["cookies"])
+                    logger.debug(f"CDP: injected {len(state['cookies'])} cookies")
+                await inject_stealth(self._context)
+                logger.debug("Reusing CDP browser context")
+                return self._context
 
         state = cookie_data or self._cookie_state
         kwargs: dict[str, Any] = {}
