@@ -193,22 +193,26 @@ class BaseScraper(ABC):
         BrowserContext
             The (cached or newly created) browser context.
         """
+        state = cookie_data or self._cookie_state
         if self._context is not None:
-            # Verify the cached context is still usable
-            try:
-                page = await self._context.new_page()
-                await page.close()
-                return self._context
-            except Exception:
-                logger.debug("Cached browser context stale, recreating")
+            # CDP: always create new context when cookies provided
+            if self.cdp_url and state and state.get("cookies"):
+                logger.debug("CDP: discarding cached context to inject cookies")
                 self._context = None
+            else:
+                try:
+                    page = await self._context.new_page()
+                    await page.close()
+                    return self._context
+                except Exception:
+                    logger.debug("Cached browser context stale, recreating")
+                    self._context = None
 
         if self._browser is None:
             await self._ensure_browser()
 
         # If using CDP, create a new context with cookie storage_state
         # (add_cookies silently fails on CDP — must use new_context with storage_state)
-        state = cookie_data or self._cookie_state
         if self.cdp_url and self._browser and state and state.get("cookies"):
             self._context = await self._browser.new_context(storage_state=state)
             await inject_stealth(self._context)
@@ -224,7 +228,6 @@ class BaseScraper(ABC):
                 logger.debug("Reusing CDP browser context (no cookies)")
                 return self._context
 
-        state = cookie_data or self._cookie_state
         kwargs: dict[str, Any] = {}
         if state:
             kwargs["storage_state"] = state
